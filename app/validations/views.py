@@ -1,30 +1,47 @@
-from rest_framework import status, generics
-from rest_framework.response import Response
 from .models import IbanValidation
+from rest_framework.views import APIView
+from rest_framework import status, generics, serializers
+from rest_framework.response import Response
+from rest_framework.authtoken.models import Token
+from rest_framework.authtoken.views import ObtainAuthToken
+
 from .serializers import IbanValidationSerializer
-import re
 
 
-class IbanValidationView(generics.CreateAPIView):
-    queryset = IbanValidation.objects.all()
-    serializer_class = IbanValidationSerializer
-
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
+class CustomAuthToken(ObtainAuthToken):
+    def post(self, request, *args, **kwargs):
+        serializer = self.serializer_class(data=request.data,
+                                           context={'request': request})
         serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+        token, created = Token.objects.get_or_create(user=user)
+        return Response({
+            'token': token.key,
+            'user_id': user.pk,
+            'username': user.username
+        })
 
-        # Perform the IBAN validation here
-        iban = serializer.validated_data['iban']
-        pattern = re.compile(r"^ME\d{2}\d{3}\d{13}\d{2}$")
-        valid = pattern.match(iban) is not None
 
-        # Create the IbanValidation instance with the validated data and the validation result
-        IbanValidation.objects.create(iban=iban, valid=valid)
+class IbanValidationView(APIView):
+    def post(self, request, format=None):
+        serializer = IbanValidationSerializer(data=request.data)
 
-        # Return 200 OK as per the requirement, whether the IBAN is valid or not
-        return Response({"valid": valid}, status=status.HTTP_200_OK)
+        if not serializer.initial_data.get('iban'):
+            return Response({"error": "Invalid request. Please provide the IBAN."}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        except serializers.ValidationError:
+            return Response({"valid": False}, status=status.HTTP_200_OK)
 
 
 class IbanValidationHistoryView(generics.ListAPIView):
-    queryset = IbanValidation.objects.all()
+    queryset = IbanValidation.objects.all().order_by('-timestamp')
     serializer_class = IbanValidationSerializer
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response({'history': serializer.data})

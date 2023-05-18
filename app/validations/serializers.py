@@ -2,43 +2,28 @@ from rest_framework import serializers
 from .models import IbanValidation
 import re
 
+def calculate_iban_checksum(iban):
+    """
+    Calculate the checksum of an IBAN.
+    """
+    iban = iban[4:] + iban[:4]
+    iban = ''.join(str(int(ch, 36)) if ch.isalpha() else ch for ch in iban)
+    return int(iban) % 97 == 1
 
 class IbanValidationSerializer(serializers.ModelSerializer):
     class Meta:
         model = IbanValidation
-        fields = '__all__'
+        fields = ('iban', 'valid')
 
     def validate_iban(self, value):
         """
         Validate the IBAN.
         """
         pattern = re.compile(r"^ME\d{2}\d{3}\d{13}\d{2}$")
-
-        if not pattern.match(value):
-            raise serializers.ValidationError("Invalid IBAN. Please check the entered IBAN.")
-
+        self.valid = bool(pattern.match(value) and calculate_iban_checksum(value))
         return value
 
     def to_representation(self, instance):
-        """
-        Override the `to_representation` method to change the representation
-        of `valid` field in the serialized data.
-
-        In our case, we want the `valid` field to be represented as it is
-        (True or False) in the serialized data. By default, Django Rest Framework
-        serializes BooleanFields as `true` or `false` (lower case). However, we want
-        the boolean representation to be `True` or `False` (Title case) in the
-        serialized data.
-
-        This method is called when converting the model instance into
-        a native Python datatype, ready for outputting as a response.
-
-        Args:
-            instance: The model instance that is being serialized.
-
-        Returns:
-            A dictionary-like object representing the serialized data of the model instance.
-        """
         ret = super().to_representation(instance)
-        ret['valid'] = instance.valid
+        ret['valid'] = getattr(self, 'valid', None)  # Use stored result, default to None
         return ret

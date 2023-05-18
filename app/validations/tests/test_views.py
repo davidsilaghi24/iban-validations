@@ -3,7 +3,6 @@ from django.urls import reverse
 
 from rest_framework import status
 from rest_framework.test import APIClient
-from rest_framework.exceptions import ErrorDetail
 
 from validations.models import IbanValidation
 
@@ -20,7 +19,7 @@ class TestIbanViews(TestCase):
     def test_iban_validation_view_no_iban(self):
         response = self.client.post(self.validate_iban_url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, {'iban': [ErrorDetail(string='This field is required.', code='required')]})
+        self.assertEqual(response.data, {'error': 'Invalid request. Please provide the IBAN.'})
 
     def test_iban_validation_view_with_iban_valid(self):
         response = self.client.post(
@@ -29,11 +28,12 @@ class TestIbanViews(TestCase):
         self.assertIn('valid', response.data)
         self.assertTrue(response.data['valid'])
 
-    def test_iban_validation_view_with_iban_invalid(self):
+    def test_iban_validation_view_with_iban_invalid_format(self):
         response = self.client.post(
             self.validate_iban_url, data={'iban': 'INVALID'})
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(response.data, {'iban': [ErrorDetail(string='Invalid IBAN. Please check the entered IBAN.', code='invalid')]})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn('valid', response.data)
+        self.assertFalse(response.data['valid'])
 
     def test_iban_validation_history_view(self):
         # Create a valid IBAN record
@@ -46,8 +46,11 @@ class TestIbanViews(TestCase):
         response = self.client.get(self.validation_history_url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-        # Check that the response contains the valid and invalid IBANs
-        self.assertEqual(len(response.data), 2)
-        response_data = [item['iban'] for item in response.data]
+        # Check that the response contains the 'history' key
+        self.assertIn('history', response.data)
+
+        # Check that the 'history' key contains the valid and invalid IBANs
+        self.assertEqual(len(response.data['history']), 2)
+        response_data = [item['iban'] for item in response.data['history']]
         self.assertIn(valid_iban.iban, response_data)
         self.assertIn(invalid_iban.iban, response_data)
