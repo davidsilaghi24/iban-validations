@@ -1,7 +1,7 @@
 from .models import IbanValidation
-from rest_framework.views import APIView
 from rest_framework import status, generics, serializers
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 
@@ -22,9 +22,13 @@ class CustomAuthToken(ObtainAuthToken):
         })
 
 
-class IbanValidationView(APIView):
-    def post(self, request, format=None):
-        serializer = IbanValidationSerializer(data=request.data)
+class IbanValidationView(generics.CreateAPIView):
+    queryset = IbanValidation.objects.all()
+    serializer_class = IbanValidationSerializer
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
 
         if not serializer.initial_data.get('iban'):
             return Response({"error": "Invalid request. Please provide the IBAN."}, status=status.HTTP_400_BAD_REQUEST)
@@ -40,6 +44,7 @@ class IbanValidationView(APIView):
 class IbanValidationHistoryView(generics.ListAPIView):
     queryset = IbanValidation.objects.all().order_by('-timestamp')
     serializer_class = IbanValidationSerializer
+    permission_classes = (IsAuthenticated,)
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
