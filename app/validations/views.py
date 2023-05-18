@@ -10,16 +10,11 @@ class IbanValidationView(generics.CreateAPIView):
     serializer_class = IbanValidationSerializer
 
     def create(self, request, *args, **kwargs):
-        # Check if iban is provided
-        iban = request.data.get('iban', None)
-        if not iban:
-            return Response({"error": "Invalid request. Please check the entered IBAN."}, status=status.HTTP_400_BAD_REQUEST)
-
         serializer = self.get_serializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        serializer.is_valid(raise_exception=True)
 
         # Perform the IBAN validation here
+        iban = serializer.validated_data['iban']
         pattern = re.compile(r"^ME\d{2}\d{3}\d{13}\d{2}$")
         valid = pattern.match(iban) is not None
 
@@ -27,7 +22,7 @@ class IbanValidationView(generics.CreateAPIView):
         IbanValidation.objects.create(iban=iban, valid=valid)
 
         # Return 200 OK as per the requirement, whether the IBAN is valid or not
-        return Response({"iban": iban, "valid": valid}, status=status.HTTP_200_OK)
+        return Response({"valid": valid}, status=status.HTTP_200_OK)
 
 
 class IbanValidationHistoryView(generics.ListAPIView):

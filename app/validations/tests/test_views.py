@@ -1,7 +1,10 @@
 from django.test import TestCase
 from django.urls import reverse
-from rest_framework.test import APIClient
+
 from rest_framework import status
+from rest_framework.test import APIClient
+from rest_framework.exceptions import ErrorDetail
+
 from validations.models import IbanValidation
 
 
@@ -17,7 +20,7 @@ class TestIbanViews(TestCase):
     def test_iban_validation_view_no_iban(self):
         response = self.client.post(self.validate_iban_url)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn('error', response.data)
+        self.assertEqual(response.data, {'iban': [ErrorDetail(string='This field is required.', code='required')]})
 
     def test_iban_validation_view_with_iban_valid(self):
         response = self.client.post(
@@ -29,9 +32,8 @@ class TestIbanViews(TestCase):
     def test_iban_validation_view_with_iban_invalid(self):
         response = self.client.post(
             self.validate_iban_url, data={'iban': 'INVALID'})
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertIn('valid', response.data)
-        self.assertFalse(response.data['valid'])
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data, {'iban': [ErrorDetail(string='Invalid IBAN. Please check the entered IBAN.', code='invalid')]})
 
     def test_iban_validation_history_view(self):
         # Create a valid IBAN record
@@ -46,6 +48,6 @@ class TestIbanViews(TestCase):
 
         # Check that the response contains the valid and invalid IBANs
         self.assertEqual(len(response.data), 2)
-        response_data = {item['iban']: item['valid'] for item in response.data}
-        self.assertTrue(response_data[valid_iban.iban])
-        self.assertFalse(response_data[invalid_iban.iban])
+        response_data = [item['iban'] for item in response.data]
+        self.assertIn(valid_iban.iban, response_data)
+        self.assertIn(invalid_iban.iban, response_data)

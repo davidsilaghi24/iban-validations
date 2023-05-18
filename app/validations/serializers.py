@@ -1,11 +1,23 @@
 from rest_framework import serializers
 from .models import IbanValidation
+import re
 
 
 class IbanValidationSerializer(serializers.ModelSerializer):
     class Meta:
         model = IbanValidation
         fields = '__all__'
+
+    def validate_iban(self, value):
+        """
+        Validate the IBAN.
+        """
+        pattern = re.compile(r"^ME\d{2}\d{3}\d{13}\d{2}$")
+
+        if not pattern.match(value):
+            raise serializers.ValidationError("Invalid IBAN. Please check the entered IBAN.")
+
+        return value
 
     def to_representation(self, instance):
         """
