@@ -30,7 +30,9 @@ A default user is created when the service is started. The credentials are:
 
 username: defaultuser
 password: defaultpassword
-API Documentation
+
+## API Documentation
+
 Swagger API documentation is provided and can be accessed at localhost:8000/swagger.
 
 ## Testing
