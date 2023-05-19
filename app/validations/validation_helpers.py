@@ -22,5 +22,5 @@ def extract_iban_details(iban):
         "country_name": country_name,
         "check_digits": check_digits,
         "bank_code": bank_code,
-        "account_number": account_number
+        "account_number": account_number,
     }

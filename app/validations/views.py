@@ -11,16 +11,15 @@ from .serializers import IbanValidationSerializer
 
 class CustomAuthToken(ObtainAuthToken):
     def post(self, request, *args, **kwargs):
-        serializer = self.serializer_class(data=request.data,
-                                           context={'request': request})
+        serializer = self.serializer_class(
+            data=request.data, context={"request": request}
+        )
         serializer.is_valid(raise_exception=True)
-        user = serializer.validated_data['user']
+        user = serializer.validated_data["user"]
         token, created = Token.objects.get_or_create(user=user)
-        return Response({
-            'token': token.key,
-            'user_id': user.pk,
-            'username': user.username
-        })
+        return Response(
+            {"token": token.key, "user_id": user.pk, "username": user.username}
+        )
 
 
 class IbanValidationView(generics.CreateAPIView):
@@ -31,8 +30,11 @@ class IbanValidationView(generics.CreateAPIView):
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
 
-        if not serializer.initial_data.get('iban'):
-            return Response({"error": "Invalid request. Please provide the IBAN."}, status=status.HTTP_400_BAD_REQUEST)
+        if not serializer.initial_data.get("iban"):
+            return Response(
+                {"error": "Invalid request. Please provide the IBAN."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
             serializer.is_valid(raise_exception=True)
@@ -43,21 +45,24 @@ class IbanValidationView(generics.CreateAPIView):
 
 
 class IbanValidationHistoryView(generics.ListAPIView):
-    queryset = IbanValidation.objects.all().order_by('-timestamp')
+    queryset = IbanValidation.objects.all().order_by("-timestamp")
     serializer_class = IbanValidationSerializer
     permission_classes = (IsAuthenticated,)
 
     def list(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
-        return Response({'history': serializer.data})
+        return Response({"history": serializer.data})
 
 
 class IbanInfoView(generics.CreateAPIView):
     def post(self, request, format=None):
-        iban = request.data.get('iban')
+        iban = request.data.get("iban")
         if iban:
             info = extract_iban_details(iban)
             return Response(info)
         else:
-            return Response({"error": "No IBAN provided."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "No IBAN provided."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
