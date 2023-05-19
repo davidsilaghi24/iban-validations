@@ -24,7 +24,8 @@ git clone https://github.com/davidsilaghi24/iban-validations.git
 cd iban-validations
 docker-compose up --build
 
-Default User
+## Default User
+
 A default user is created when the service is started. The credentials are:
 
 username: defaultuser
@@ -32,7 +33,8 @@ password: defaultpassword
 API Documentation
 Swagger API documentation is provided and can be accessed at localhost:8000/swagger.
 
-Testing
+## Testing
+
 To run the tests, you can execute the following command:
 
 docker-compose exec web python manage.py test
@@ -40,39 +42,6 @@ docker-compose exec web python manage.py test
 You can use the default user credentials (defaultuser/defaultpassword) to authenticate the requests.
 
 Please refer to the Swagger API documentation for the request/response formats and other details.
-
-## Project Structure
-
-Here is an overview of the project structure:
-
-├── Dockerfile
-├── README.md
-├── docker-compose.yml
-├── manage.py
-├── app
-│ ├── **init**.py
-│ ├── asgi.py
-│ ├── settings.py
-│ ├── urls.py
-│ ├── wsgi.py
-│ ├── validations
-│ │ ├── **init**.py
-│ │ ├── admin.py
-│ │ ├── apps.py
-│ │ ├── migrations
-│ │ ├── models.py
-│ │ ├── serializers.py
-│ │ ├── tests
-│ │ ├── urls.py
-│ │ ├── views.py
-│ │ ├── validation_helpers.py
-│ ├── users
-│ │ ├── **init**.py
-│ │ ├── admin.py
-│ │ ├── apps.py
-│ │ ├── migrations
-│ │ ├── models.py
-└── requirements.txt
 
 ## Support
 
