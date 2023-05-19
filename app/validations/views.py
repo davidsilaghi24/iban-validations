@@ -56,6 +56,8 @@ class IbanValidationHistoryView(generics.ListAPIView):
 
 
 class IbanInfoView(generics.CreateAPIView):
+    permission_classes = (IsAuthenticated,)
+
     def post(self, request, format=None):
         iban = request.data.get("iban")
         if iban:
