@@ -1,3 +1,4 @@
+from .validation_helpers import extract_iban_details
 from .models import IbanValidation
 from rest_framework import status, generics, serializers
 from rest_framework.response import Response
@@ -50,3 +51,13 @@ class IbanValidationHistoryView(generics.ListAPIView):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
         return Response({'history': serializer.data})
+
+
+class IbanInfoView(generics.CreateAPIView):
+    def post(self, request, format=None):
+        iban = request.data.get('iban')
+        if iban:
+            info = extract_iban_details(iban)
+            return Response(info)
+        else:
+            return Response({"error": "No IBAN provided."}, status=status.HTTP_400_BAD_REQUEST)
