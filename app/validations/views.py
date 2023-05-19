@@ -6,7 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 
-from .serializers import IbanValidationSerializer
+from .serializers import IbanValidationSerializer, IbanInfoSerializer
 
 
 class CustomAuthToken(ObtainAuthToken):
@@ -39,7 +39,12 @@ class IbanValidationView(generics.CreateAPIView):
         try:
             serializer.is_valid(raise_exception=True)
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
+
+            response_data = serializer.data.copy()
+            # remove the 'timestamp' field
+            response_data.pop('timestamp', None)
+
+            return Response(response_data, status=status.HTTP_200_OK)
         except serializers.ValidationError:
             return Response({"valid": False}, status=status.HTTP_200_OK)
 
@@ -57,6 +62,7 @@ class IbanValidationHistoryView(generics.ListAPIView):
 
 class IbanInfoView(generics.CreateAPIView):
     permission_classes = (IsAuthenticated,)
+    serializer_class = IbanInfoSerializer
 
     def post(self, request, format=None):
         iban = request.data.get("iban")

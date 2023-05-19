@@ -44,3 +44,7 @@ class IbanValidationSerializer(serializers.ModelSerializer):
         validated_data.pop('valid', None)
 
         return IbanValidation.objects.create(valid=valid, **validated_data)
+
+
+class IbanInfoSerializer(serializers.Serializer):
+    iban = serializers.CharField(max_length=34)
